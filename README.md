@@ -29,15 +29,14 @@ Coming soon
 
 **Download and Installtion**
 
-Download the Blendpeaks.py file from this repository. Or get the file from the releases page.
+Download the Blendpeaks.py file from this repository. Or get the zip file from the releases page.
 https://github.com/oormicreations/Blendpeaks/releases
 
-Alt link : https://oormi.in/software/blender/Blendpeaks.py
+Alt link: https://oormi.in/software/blender/Blendpeaks.zip
 
 Install from the Blender Menu > Edit > Preferences > Add-ons > Install. Pick the python file. Enable this addon.
 You will find the UI in the 3D View window when you press N.
 
-_**Do not** install the zip file. Unzip the downloaded file and pick the Blendpeaks.py file while installing._
 
 **Usage**
 
