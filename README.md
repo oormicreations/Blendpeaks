@@ -24,7 +24,7 @@ This very simple add-on generates models of mountain peaks with a procedural mat
 
 **Intro Video**
 
-Coming soon
+https://www.youtube.com/watch?v=3-a7UdHuQIM
 
 
 **Download and Installtion**
