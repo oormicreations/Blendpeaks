@@ -30,7 +30,7 @@ Coming soon
 **Download and Installtion**
 
 Download the Blendpeaks.py file from this repository. Or get the file from the releases page.
-https://github.com/oormicreations/Seashells/releases
+https://github.com/oormicreations/Blendpeaks/releases
 
 Install from the Blender Menu > Edit > Preferences > Add-ons > Install. Pick the python file. Enable this addon.
 You will find the UI in the 3D View window when you press N.
