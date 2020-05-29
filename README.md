@@ -37,6 +37,8 @@ Alt link: https://oormi.in/software/blender/Blendpeaks.zip
 Install from the Blender Menu > Edit > Preferences > Add-ons > Install. Pick the python file. Enable this addon.
 You will find the UI in the 3D View window when you press N.
 
+Some versions of Blender may not show the UI or addon. Try installing the python file directly after unzipping the zip.
+
 
 **Usage**
 
@@ -72,6 +74,7 @@ The following parameters can be adjusted anytime, before or after creation of th
 **Known Issues**
 
 * If you have two peaks and you change the first, and select the second and try to change it, it gets all the parameters of first peak and the last setting is lost. This is because the other parameter remain in the UI, while you selected the second peak.
+* Does not work in non-English versions yet.
 * **Always save your stuff!**
 
 
