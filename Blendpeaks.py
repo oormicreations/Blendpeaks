@@ -8,7 +8,7 @@ bl_info = {
     "name": "Blendpeaks",
     "description": "Creates Mountain Peaks",
     "author": "Oormi Creations",
-    "version": (0, 1, 0),
+    "version": (0, 1, 1),
     "blender": (2, 80, 0),
     "location": "3D View > Blendpeaks",
     "warning": "", # used for warning icon and text in addons panel
@@ -558,7 +558,7 @@ def unregister():
     from bpy.utils import unregister_class
     for cls in reversed(classes):
         unregister_class(cls)
-    del bpy.types.Scene.ss_tool
+    del bpy.types.Scene.bp_tool
 
 
 
