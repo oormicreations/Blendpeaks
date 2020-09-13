@@ -8,7 +8,7 @@ bl_info = {
     "name": "Blendpeaks",
     "description": "Creates Mountain Peaks",
     "author": "Oormi Creations",
-    "version": (0, 1, 1),
+    "version": (0, 1, 2),
     "blender": (2, 80, 0),
     "location": "3D View > Blendpeaks",
     "warning": "", # used for warning icon and text in addons panel
@@ -181,6 +181,7 @@ def creatematerial(sstool):
     matlinks.new(math2.outputs[0], mix3.inputs[2])
     
     mix4 = matnodes.new('ShaderNodeMixRGB')
+    mix4.name='finalmix'
     disp = matnodes.new('ShaderNodeDisplacement')
     
     mix4.location = Vector((900,220))
@@ -253,7 +254,7 @@ def creatematerial(sstool):
 
 def createpeak(sstool):
     
-    bpy.ops.mesh.primitive_plane_add(size=2)
+    bpy.ops.mesh.primitive_plane_add(size=sstool.p_sz)
     bpy.ops.object.shade_smooth()
     bpy.context.object.name = "Blendpeak.001"
     peakname = bpy.context.object.name #because name can change if exists already
@@ -306,6 +307,21 @@ def on_update_rock(self, context):
     cramp = bpy.context.object.data.materials[0].node_tree.nodes["Snow"]
     rock = context.scene.bp_tool.p_rock
     cramp.color_ramp.elements[0].position = rock/100
+    
+def on_update_scale(self, context):
+    peak = bpy.context.view_layer.objects.active
+    if peak == None:
+        return
+    pscale = context.scene.bp_tool.p_scale
+    peak.scale = Vector((pscale, pscale, pscale))
+    prock = context.scene.bp_tool.p_rock 
+    if pscale>=1.0:
+        context.scene.bp_tool.p_rock = 50.0/pscale
+        context.scene.bp_tool.p_snow = 50.0/pscale
+    else:
+        context.scene.bp_tool.p_rock = 50.0*pscale
+        context.scene.bp_tool.p_snow = 50.0*pscale
+
 
 def randomizeall(sstool):
     sstool.p_height =  random.randrange(30, 60)/10
@@ -331,6 +347,7 @@ class CRD_OT_CResetPeakDefaults(bpy.types.Operator):
         sstool = scene.bp_tool
         
         sstool.p_divs = 100
+        sstool.p_sz = 2
         sstool.p_height = 4
         sstool.p_seed = 3
         sstool.p_gross = 25
@@ -340,6 +357,7 @@ class CRD_OT_CResetPeakDefaults(bpy.types.Operator):
         sstool.p_snow = 50
         sstool.p_rock = 50
         sstool.p_rand = False
+        sstool.p_scale = 1
         
         sstool.p_res = "Reset to defaults, except Divisions"
         return{'FINISHED'}  
@@ -387,6 +405,7 @@ class OBJECT_PT_PeakPanel(bpy.types.Panel):
         sstool = scene.bp_tool
         
         layout.prop(sstool, "p_divs")
+        #layout.prop(sstool, "p_sz")
         layout.prop(sstool, "p_rand")
         layout.operator("create.peak", text = "Create Peak", icon='HEART')
 #        layout.prop(sstool, "p_adjust") 
@@ -398,6 +417,7 @@ class OBJECT_PT_PeakPanel(bpy.types.Panel):
         layout.prop(sstool, "p_rfine")
         layout.prop(sstool, "p_snow")
         layout.prop(sstool, "p_rock")
+        layout.prop(sstool, "p_scale")
 
 
 class OBJECT_PT_MiscPeakPanel(bpy.types.Panel):
@@ -433,7 +453,24 @@ class CCProperties(PropertyGroup):
         min=1,
         max=1000        
       )   
+      
+    p_sz: FloatProperty(
+        name = "Size",
+        description = "Expanse of the landscape",
+        default = 2,
+        min=0.01,
+        max=10000       
+      )   
 
+    p_scale: FloatProperty(
+        name = "Scale",
+        description = "Scales textures proportionately",
+        default = 1,
+        min=0.01,
+        max=10,
+        update=on_update_scale
+      )   
+      
     p_height: FloatProperty(
         name = "Height",
         description = "Height of the peak",
