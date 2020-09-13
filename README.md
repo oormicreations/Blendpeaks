@@ -66,6 +66,8 @@ The following parameters can be adjusted anytime, before or after creation of th
 
 **Rock** Adjust the amount of grass/rock material on the peak.
 
+**Scale** Scale the model along with the textures. You can also scale it as usual and later adjust the textures.
+
 **Reset Defaults** button will reset all parameters to default values. Else they remain stored in your blender file.
 
 **Help | Source | Updates** brings you to this page on GitHub.
