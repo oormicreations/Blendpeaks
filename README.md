@@ -43,47 +43,47 @@ Some versions of Blender may not show the UI or addon. Try installing the python
 
 Just click the **Create Peak** button!
 
-**Divisions** define the resolution of the geometry.
+**Divisions**: define the resolution of the geometry.
 
-**Randomize** sets up semi-random parameters for creation of a unique peak.
+**Randomize**: sets up semi-random parameters for creation of a unique peak.
 
 The following parameters can be adjusted anytime, before or after creation of the peak (Select the peak and change it).
 
-**Height** Changes the height. Also goes in negative to create pits.
+**Height**: Changes the height. Also goes in negative to create pits.
 
-**Seed** Changes overall shape.
+**Seed**: Changes overall shape.
 
-**Shape** Defines gross shape.
+**Shape**: Defines gross shape.
 
-**Shape Details** Finer details.
+**Shape Details**: Finer details.
 
-**Ridges** Changes the sharp edges on the peak.
+**Ridges**: Changes the sharp edges on the peak.
 
-**Ridges Details** You can have more straight or random ridges.
+**Ridges Details**: You can have more straight or random ridges.
 
-**Erosion** Creates eroded peaks with outcrops of rocks.
+**Erosion**: Creates eroded peaks with outcrops of rocks.
 
-**Erosion Scale** Scale of eroded features.
+**Erosion Scale**: Scale of eroded features.
 
-**Snow** Adjust the amount of snow on the peak. It is angle dependent. Does on appear on steep slopes.
+**Snow**: Adjust the amount of snow on the peak. It is angle dependent. Does on appear on steep slopes.
 
-**Rock** Adjust the amount of grass/rock material on the peak.
+**Rock**: Adjust the amount of grass/rock material on the peak.
 
-**Scale** Scale the model along with the textures. You can also scale it as usual and later adjust the textures.
+**Scale**: Scale the model along with the textures. You can also scale it as usual and later adjust the textures.
 
 **Bake Panel**
 
-**Size** Width and height of the image for height map.
+**Size**: Width and height of the image for height map.
 
-**Switch to Eevee** Switches to Eevee renderer immediately after baking the height map and applies it on the model.
+**Switch to Eevee**: Switches to Eevee renderer immediately after baking the height map and applies it on the model.
 
-**Bake Height Map** Bakes a height map/displacement map for use in Eevee or in game engines etc.
+**Bake Height Map**: Bakes a height map/displacement map for use in Eevee or in game engines etc.
 
 **Misc Panel**
 
-**Reset Defaults** button will reset all parameters to default values. Else they remain stored in your blender file.
+**Reset Defaults**: button will reset all parameters to default values. Else they remain stored in your blender file.
 
-**Help | Source | Updates** brings you to this page on GitHub.
+**Help | Source | Updates**: brings you to this page on GitHub.
 
 
 **Known Issues**
