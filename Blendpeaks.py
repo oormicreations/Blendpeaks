@@ -8,7 +8,7 @@ bl_info = {
     "name": "Blendpeaks",
     "description": "Creates Mountain Peaks",
     "author": "Oormi Creations",
-    "version": (0, 1, 2),
+    "version": (0, 1, 3),
     "blender": (2, 80, 0),
     "location": "3D View > Blendpeaks",
     "warning": "", # used for warning icon and text in addons panel
@@ -36,7 +36,14 @@ from bpy.types import (Panel,
                        PropertyGroup,
                        )
 
+def ShowMessageBox(message = "", title = "BlendPeak Says...", icon = 'INFO'):
 
+    def draw(self, context):
+        self.layout.label(text=message)
+
+    bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
+    
+    
 
 def creatematerial(sstool):
     mat = bpy.data.materials.new(name="BlendpeaksMat")
@@ -87,6 +94,32 @@ def creatematerial(sstool):
     matlinks.new(coodmask.outputs[3], gradmask.inputs[0])
     matlinks.new(gradmask.outputs[0], mapmask.inputs[0])
     matlinks.new(mapmask.outputs[0], rampmask.inputs[0])
+    
+    #erosion
+    noiseero = matnodes.new('ShaderNodeTexNoise')
+    rampero = matnodes.new('ShaderNodeValToRGB')
+    mathero = matnodes.new('ShaderNodeMath')
+    
+    noiseero.name = "Eroscale"
+    rampero.name = "Ero"
+    
+    noiseero.location = Vector((-237, 597))
+    rampero.location = Vector((-26, 620))
+    mathero.location = Vector((340, 375))
+
+    
+    noiseero.inputs[2].default_value = sstool.p_eroscale/10.0
+    noiseero.inputs[3].default_value = 16
+    rampero.color_ramp.elements[0].position = sstool.p_ero/100 #0.47
+    rampero.color_ramp.elements[1].position = 1 - (sstool.p_ero/100) #0.58
+    mathero.operation = 'MULTIPLY'
+    
+    matlinks.new(noiseero.outputs[0], rampero.inputs[0])
+    matlinks.new(rampero.outputs[0], mathero.inputs[0])
+    matlinks.new(rampmask.outputs[0], mathero.inputs[1])
+
+
+
 
     #seed
     ncoodseed = matnodes.new('ShaderNodeTexCoord')
@@ -192,7 +225,8 @@ def creatematerial(sstool):
     disp.inputs[1].default_value = 0
     disp.inputs[2].default_value = sstool.p_height/10.0 #0.4
     
-    matlinks.new(rampmask.outputs[0], mix4.inputs[0])
+    #matlinks.new(rampmask.outputs[0], mix4.inputs[0])
+    matlinks.new(mathero.outputs[0], mix4.inputs[0])
     matlinks.new(math3.outputs[0], mix4.inputs[1])
     matlinks.new(math4.outputs[0], mix4.inputs[2])
     matlinks.new(mix4.outputs[0], disp.inputs[0])
@@ -207,12 +241,12 @@ def creatematerial(sstool):
     cbump = matnodes.new('ShaderNodeBump')
     cramp.name = "Snow"
     
-    ccood.location = Vector((-640,860))
-    csepxyz.location = Vector((-440,860))
-    cramp.location = Vector((-240,860))
-    cinv.location = Vector((340,860))
-    cnoise.location = Vector((340,740))
-    cbump.location = Vector((540,740))
+    ccood.location = Vector((-640,1060))
+    csepxyz.location = Vector((-440,1060))
+    cramp.location = Vector((-240,1060))
+    cinv.location = Vector((340,1060))
+    cnoise.location = Vector((340,940))
+    cbump.location = Vector((540,940))
 
     cinv.inputs[0].default_value = 1
     cnoise.inputs[2].default_value = 4.6
@@ -231,11 +265,11 @@ def creatematerial(sstool):
     cramp.color_ramp.elements[2].position = 0.10 + sstool.p_snow/100
     cramp.color_ramp.elements[3].position = 0.15 + sstool.p_snow/100
     
-    cramp.color_ramp.elements[0].color = (0.00855, 0.00684, 0.00609, 1)
-    cramp.color_ramp.elements[1].color = (0.504276, 0.503419, 0.503045, 1)
-    cramp.color_ramp.elements[2].color = (1, 1, 1, 1)
-    cramp.color_ramp.elements[3].color = (0.01593, 0.04252, 0.0224, 1)
-    cramp.color_ramp.elements[4].color = (0.02642, 0.04844, 0.017, 1)
+    cramp.color_ramp.elements[0].color = sstool.p_rockcolor
+    cramp.color_ramp.elements[1].color = sstool.p_snowcolor1
+    cramp.color_ramp.elements[2].color = sstool.p_snowcolor2
+    cramp.color_ramp.elements[3].color = sstool.p_grasscolor2
+    cramp.color_ramp.elements[4].color = sstool.p_grasscolor1
 
     matlinks.new(ccood.outputs[1], csepxyz.inputs[0])
     matlinks.new(csepxyz.outputs[2], cramp.inputs[0])
@@ -256,7 +290,7 @@ def createpeak(sstool):
     
     bpy.ops.mesh.primitive_plane_add(size=sstool.p_sz)
     bpy.ops.object.shade_smooth()
-    bpy.context.object.name = "Blendpeak.001"
+    bpy.context.object.name = "Blendpeak" + str(sstool.p_count)
     peakname = bpy.context.object.name #because name can change if exists already
     
     bpy.ops.object.editmode_toggle()
@@ -269,6 +303,8 @@ def createpeak(sstool):
     
     bpy.context.scene.render.engine = 'CYCLES'
     bpy.context.space_data.shading.type = 'RENDERED'
+
+    sstool.p_count += 1
     
     return {'FINISHED'}
 
@@ -292,6 +328,18 @@ def on_update_rgross(self, context):
 
 def on_update_rfine(self, context):
     bpy.context.object.data.materials[0].node_tree.nodes["RidgeFine"].inputs[2].default_value = context.scene.bp_tool.p_rfine/10.0
+
+def on_update_ero(self, context):
+    rampero = bpy.context.object.data.materials[0].node_tree.nodes["Ero"]
+    val = context.scene.bp_tool.p_ero/100.0
+    rampero.color_ramp.elements[0].position = val
+    rampero.color_ramp.elements[1].position = 1-val
+
+def on_update_eroscale(self, context):
+    bpy.context.object.data.materials[0].node_tree.nodes["Eroscale"].inputs[2].default_value = context.scene.bp_tool.p_eroscale/10.0
+
+
+
 
 def on_update_snow(self, context):
     cramp = bpy.context.object.data.materials[0].node_tree.nodes["Snow"]
@@ -322,6 +370,14 @@ def on_update_scale(self, context):
         context.scene.bp_tool.p_rock = 50.0*pscale
         context.scene.bp_tool.p_snow = 50.0*pscale
 
+def on_update_colors(self, context):
+    cramp = bpy.context.object.data.materials[0].node_tree.nodes["Snow"]
+    cramp.color_ramp.elements[4].color = context.scene.bp_tool.p_grasscolor1
+    cramp.color_ramp.elements[3].color = context.scene.bp_tool.p_grasscolor2
+    cramp.color_ramp.elements[2].color = context.scene.bp_tool.p_snowcolor1
+    cramp.color_ramp.elements[1].color = context.scene.bp_tool.p_snowcolor2
+    cramp.color_ramp.elements[0].color = context.scene.bp_tool.p_rockcolor
+
 
 def randomizeall(sstool):
     sstool.p_height =  random.randrange(30, 60)/10
@@ -332,6 +388,78 @@ def randomizeall(sstool):
     sstool.p_rfine = random.randrange(0, 200)
     sstool.p_snow = random.randrange(0, 70)
     sstool.p_rock = random.randrange(0, 70)    
+
+def bakepeak(sstool):
+    peakobj = bpy.context.view_layer.objects.active
+    if peakobj == None:
+        return 0
+    
+    mat = peakobj.active_material
+    if mat == None:
+        return 0
+    
+    mapsz = sstool.p_bakesz
+    imgname = peakobj.name + "_Height_Bake"
+    bpy.data.images.new(name=imgname, width = mapsz, height = mapsz, float_buffer=True)
+
+    img = bpy.data.images[imgname]
+    img.filepath = '//' + imgname + ".exr"
+
+    n_image = len(bpy.data.images) - 1
+
+    img.source = 'GENERATED'
+    img.generated_type = 'BLANK'
+    img.use_generated_float = True
+
+    matnodes = mat.node_tree.nodes
+    matlinks = mat.node_tree.links
+
+    cmath = matnodes.new('ShaderNodeMath')
+    cmath.operation = 'DIVIDE'
+    cmath.inputs[1].default_value = 2
+
+    cmath.location = 1100,440
+    matlinks.new(matnodes['finalmix'].outputs[0], cmath.inputs[0])
+
+    timage = matnodes.new('ShaderNodeTexImage')
+    timage.location = 1100,-140
+    timage.image = bpy.data.images[imgname]
+
+    matlinks.new(cmath.outputs[0], matnodes['Material Output'].inputs[0])
+
+    #remove disp link if present
+    if len(matnodes['Material Output'].inputs[2].links) > 0:
+        link = matnodes['Material Output'].inputs[2].links[0]
+        mat.node_tree.links.remove(link)
+
+    timage.select = True
+    matnodes.active = timage
+
+    bpy.ops.object.bake(type='COMBINED')
+
+    img.file_format = 'OPEN_EXR'
+    print(img.filepath)
+    if img.filepath is None:
+        return 1
+    
+    img.save()
+
+    #switch to Eevee
+    if sstool.p_toeevee:
+        bpy.context.scene.render.engine = 'BLENDER_EEVEE'
+        bpy.context.space_data.shading.type = 'SOLID'
+
+        bpy.ops.texture.new()
+        l = len(bpy.data.textures)
+        disptex = bpy.data.textures[l-1]
+        disptex.image = bpy.data.images[imgname]
+        bpy.ops.object.modifier_add(type='DISPLACE')
+        mod = bpy.context.view_layer.objects.active.modifiers[0]
+        mod.texture = disptex
+        mod.mid_level = 0
+    
+    return 2
+
     
 #----------------------------------------------------------------------------------------
 # Operators
@@ -349,16 +477,32 @@ class CRD_OT_CResetPeakDefaults(bpy.types.Operator):
         sstool.p_divs = 100
         sstool.p_sz = 2
         sstool.p_height = 4
-        sstool.p_seed = 3
+        sstool.p_seed = 10
         sstool.p_gross = 25
         sstool.p_fine = 80
         sstool.p_rgross = 75
         sstool.p_rfine = 120
+        sstool.p_ero = 30
+        sstool.p_eroscale = 30
         sstool.p_snow = 50
         sstool.p_rock = 50
         sstool.p_rand = False
         sstool.p_scale = 1
         
+        sstool.p_grasscolor1 = (0.048438, 0.040584, 0.007456, 1.0)
+        sstool.p_grasscolor2 = (0.015930, 0.042520, 0.022400, 1.0)
+        sstool.p_snowcolor1 = (0.5,0.5,0.45,1.0)
+        sstool.p_snowcolor2 = (0.9,0.9,0.9,1.0)
+        sstool.p_rockcolor = (0.008550, 0.006840, 0.006090, 1.0)
+
+        if bpy.context.object is not None:
+            cramp = bpy.context.object.data.materials[0].node_tree.nodes["Snow"]
+            cramp.color_ramp.elements[0].color = (0.008550, 0.006840, 0.006090, 1.0)
+            cramp.color_ramp.elements[1].color = (0.5,0.5,0.45,1.0)
+            cramp.color_ramp.elements[2].color = (0.9,0.9,0.9,1.0)
+            cramp.color_ramp.elements[3].color = (0.015930, 0.042520, 0.022400, 1.0)
+            cramp.color_ramp.elements[4].color = (0.048438, 0.040584, 0.007456, 1.0)
+                    
         sstool.p_res = "Reset to defaults, except Divisions"
         return{'FINISHED'}  
 
@@ -382,6 +526,27 @@ class CCP_OT_CCreatePeak(bpy.types.Operator):
         
         createpeak(sstool)
         sstool.p_res = "Peak created !"
+        return{'FINISHED'}
+
+class CBP_OT_CBakePeak(bpy.types.Operator):
+    bl_idname = "bake.peak"
+    bl_label = "Bake Peak"
+    bl_description = "Bake the height map."
+
+    def execute(self, context):
+        scene = context.scene
+        sstool = scene.bp_tool
+        
+        res = bakepeak(sstool)
+        if res==0 :
+            ShowMessageBox("Please select a peak!")
+        if res==1 :
+            sstool.p_res = "Baked image could not be saved!"
+            ShowMessageBox("Baked image could not be saved! Save it from Image Editor.")
+            
+        else:
+            sstool.p_res = "Height Map Created and Saved!"
+    
         return{'FINISHED'}
         
 #---------------------------------------------------------------------------------------------------------------------------
@@ -415,9 +580,18 @@ class OBJECT_PT_PeakPanel(bpy.types.Panel):
         layout.prop(sstool, "p_fine")
         layout.prop(sstool, "p_rgross")
         layout.prop(sstool, "p_rfine")
+        layout.prop(sstool, "p_ero")
+        layout.prop(sstool, "p_eroscale")
+        
         layout.prop(sstool, "p_snow")
         layout.prop(sstool, "p_rock")
         layout.prop(sstool, "p_scale")
+        row = layout.row(align=True)
+        row.prop(sstool, "p_grasscolor1")
+        row.prop(sstool, "p_grasscolor2")
+        row.prop(sstool, "p_snowcolor1")
+        row.prop(sstool, "p_snowcolor2")
+        row.prop(sstool, "p_rockcolor")
 
 
 class OBJECT_PT_MiscPeakPanel(bpy.types.Panel):
@@ -439,13 +613,42 @@ class OBJECT_PT_MiscPeakPanel(bpy.types.Panel):
         layout.operator("resetpeak.defaults", text = "Reset Defaults", icon='X')
         layout.operator("wm.url_open", text="Help | Source | Updates", icon='QUESTION').url = "https://github.com/oormicreations/Blendpeaks"
         layout.label(text = sstool.p_about)
+
+
+class OBJECT_PT_BakePanel(bpy.types.Panel):
+
+    bl_label = "Bake"
+    bl_idname = "OBJECT_PT_BAKE_Panel"
+    bl_category = "Blendpeaks"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_context = "objectmode"
+
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        sstool = scene.bp_tool
+        
+        #layout.label(text = sstool.p_res)
+        layout.prop(sstool, "p_bakesz")
+        layout.prop(sstool, "p_toeevee")
+        layout.operator("bake.peak", text = "Bake Height Map", icon='OUTLINER_OB_IMAGE')
+
+
       
 #---------------------------------------------------------------------------------------------------
 # Properties
 #---------------------------------------------------------------------------------------------------
 
 class CCProperties(PropertyGroup):
-    
+
+    p_count: IntProperty(
+        name = "Count",
+        description = "Index for naming, internal use only",
+        default = 1,
+      ) 
+          
     p_divs: IntProperty(
         name = "Divisions",
         description = "Number of Subdivisions, density of mesh",
@@ -483,7 +686,7 @@ class CCProperties(PropertyGroup):
     p_seed: FloatProperty(
         name = "Seed",
         description = "Randomized shape of the peak",
-        default = 3.0,
+        default = 10.0,
         min=0,
         max=10000,
         update=on_update_seed
@@ -523,6 +726,24 @@ class CCProperties(PropertyGroup):
         min=0,
         max=10000,
         update=on_update_rfine
+      )
+
+    p_ero: FloatProperty(
+        name = "Erosion",
+        description = "Erodes the terrain",
+        default = 30,
+        min=0,
+        max=100,
+        update=on_update_ero
+      )
+    
+    p_eroscale: FloatProperty(
+        name = "Erosion Scale",
+        description = "Scale of erosion",
+        default = 30,
+        min=0,
+        max=1000,
+        update=on_update_eroscale
       )
 
     p_snow: FloatProperty(
@@ -567,20 +788,83 @@ class CCProperties(PropertyGroup):
         default = "Oormi Creations | http://oormi.in"
       )
 
+    p_bakesz: IntProperty(
+        name = "Size",
+        description = "Size in pixels of the image.",
+        default = 1024,
+        min=16,
+        max=100000        
+      ) 
+      
+    p_toeevee: BoolProperty(
+        name = "Switch to Eevee",
+        description = "Change renderer to Eevee",
+        default = True
+    )
 
+    p_grasscolor1: FloatVectorProperty(
+         name = "",
+         subtype = "COLOR",
+         size = 4,
+         min = 0.0,
+         max = 1.0,
+         default = (0.048438, 0.040584, 0.007456, 1.0),
+         update=on_update_colors
+     )
 
+    p_grasscolor2: FloatVectorProperty(
+         name = "",
+         subtype = "COLOR",
+         size = 4,
+         min = 0.0,
+         max = 1.0,
+         default = (0.015930, 0.042520, 0.022400, 1.0),
+         update=on_update_colors
+     )
+          
+    p_snowcolor1: FloatVectorProperty(
+         name = "",
+         subtype = "COLOR",
+         size = 4,
+         min = 0.0,
+         max = 1.0,
+         default = (0.5,0.5,0.45,1.0),
+         update=on_update_colors
+     )
 
-    
+    p_snowcolor2: FloatVectorProperty(
+         name = "",
+         subtype = "COLOR",
+         size = 4,
+         min = 0.0,
+         max = 1.0,
+         default = (0.9,0.9,0.9,1.0),
+         update=on_update_colors
+     )
+     
+    p_rockcolor: FloatVectorProperty(
+         name = "",
+         subtype = "COLOR",
+         size = 4,
+         min = 0.0,
+         max = 1.0,
+         default = (0.008550, 0.006840, 0.006090, 1.0),
+         update=on_update_colors
+     )   
+     
+      
 # ------------------------------------------------------------------------
 #    Registration
 # ------------------------------------------------------------------------
 
 classes = (
     OBJECT_PT_PeakPanel,
-    OBJECT_PT_MiscPeakPanel,
+    OBJECT_PT_BakePanel,
+    OBJECT_PT_MiscPeakPanel,    
     CCProperties,
     CCP_OT_CCreatePeak,
-    CRD_OT_CResetPeakDefaults
+    CRD_OT_CResetPeakDefaults,
+    CBP_OT_CBakePeak
 )
 
 def register():
