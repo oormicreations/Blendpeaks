@@ -42,6 +42,9 @@ Some versions of Blender may not show the UI or addon. Try installing the python
 **Usage**
 
 Just click the **Create Peak** button!
+Its done.
+
+**Blendpeaks Panel**
 
 **Divisions**: define the resolution of the geometry.
 
@@ -70,6 +73,8 @@ The following parameters can be adjusted anytime, before or after creation of th
 **Rock**: Adjust the amount of grass/rock material on the peak.
 
 **Scale**: Scale the model along with the textures. You can also scale it as usual and later adjust the textures.
+
+**Colors**: Change the colors as you wish. Or you can edit the shader directly.
 
 **Bake Panel**
 
