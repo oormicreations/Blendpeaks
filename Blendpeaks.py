@@ -8,7 +8,7 @@ bl_info = {
     "name": "Blendpeaks",
     "description": "Creates Mountain Peaks",
     "author": "Oormi Creations",
-    "version": (0, 1, 3),
+    "version": (0, 1, 4),
     "blender": (2, 80, 0),
     "location": "3D View > Blendpeaks",
     "warning": "", # used for warning icon and text in addons panel
@@ -277,7 +277,12 @@ def creatematerial(sstool):
     matlinks.new(cnoise.outputs[0], cbump.inputs[2])
     matlinks.new(cinv.outputs[0], matnodes['Principled BSDF'].inputs[7])
     matlinks.new(cramp.outputs[0], matnodes['Principled BSDF'].inputs[0])
-    matlinks.new(cbump.outputs[0], matnodes['Principled BSDF'].inputs[19])
+    
+    if bpy.app.version[1] > 90:
+        matlinks.new(cbump.outputs[0], matnodes['Principled BSDF'].inputs[20])
+    else:
+        matlinks.new(cbump.outputs[0], matnodes['Principled BSDF'].inputs[19])
+    
     matlinks.new(matnodes['Principled BSDF'].outputs[0], matnodes['Material Output'].inputs[0])
 
 
