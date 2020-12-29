@@ -397,7 +397,7 @@ def on_update_rockparam(self, context):
     n.nodes["Mapping"].inputs[1].default_value[0] = t.p_rockshape
     n.nodes["Noise Texture.001"].inputs[2].default_value = t.p_rockshapescale/10.0
     n.nodes["Displacement"].inputs[2].default_value = 20 - (t.p_rocksmooth/10.0)
-    n.nodes["Noise Texture"].inputs[2].default_value = t.p_rockfine/100
+    n.nodes["Mix"].inputs[0].default_value = t.p_rockfine/100
     n.nodes["Noise Texture"].inputs[2].default_value = t.p_rockfinescale
     n.nodes["Mapping"].inputs[3].default_value[2] = t.p_rocklava
     
