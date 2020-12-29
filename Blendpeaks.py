@@ -8,7 +8,7 @@ bl_info = {
     "name": "Blendpeaks",
     "description": "Creates Mountain Peaks",
     "author": "Oormi Creations",
-    "version": (0, 1, 4),
+    "version": (0, 1, 5),
     "blender": (2, 80, 0),
     "location": "3D View > Blendpeaks",
     "warning": "", # used for warning icon and text in addons panel
@@ -383,6 +383,24 @@ def on_update_colors(self, context):
     cramp.color_ramp.elements[1].color = context.scene.bp_tool.p_snowcolor2
     cramp.color_ramp.elements[0].color = context.scene.bp_tool.p_rockcolor
 
+def on_update_colors_rock(self, context):
+    cramp = bpy.context.object.data.materials[0].node_tree.nodes["ColorRamp"]
+    cramp.color_ramp.elements[1].color = context.scene.bp_tool.p_rockcolor1
+    cramp.color_ramp.elements[0].color = context.scene.bp_tool.p_rockcolor2
+
+def on_update_rockparam(self, context):
+    t = context.scene.bp_tool
+    n = bpy.context.object.data.materials[0].node_tree
+    
+    bpy.context.object.scale[2] = t.p_rockht
+    
+    n.nodes["Mapping"].inputs[1].default_value[0] = t.p_rockshape
+    n.nodes["Noise Texture.001"].inputs[2].default_value = t.p_rockshapescale/10.0
+    n.nodes["Displacement"].inputs[2].default_value = 20 - (t.p_rocksmooth/10.0)
+    n.nodes["Noise Texture"].inputs[2].default_value = t.p_rockfine/100
+    n.nodes["Noise Texture"].inputs[2].default_value = t.p_rockfinescale
+    n.nodes["Mapping"].inputs[3].default_value[2] = t.p_rocklava
+    
 
 def randomizeall(sstool):
     sstool.p_height =  random.randrange(30, 60)/10
@@ -465,6 +483,121 @@ def bakepeak(sstool):
     
     return 2
 
+def createrock(sstool):
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=sstool.p_rockdiv, radius=sstool.p_rocksz, enter_editmode=False, location=(0, 0, 0))
+    bpy.ops.object.shade_smooth()
+    bpy.context.object.name = "Blendrock" + str(sstool.p_rcount)
+    rockname = bpy.context.object.name #because name can change if exists already
+    
+    #height
+    bpy.context.object.scale[2] = sstool.p_rockht
+    
+    mat = bpy.data.materials.new(name="NodeToScriptMat")
+    mat.use_nodes = True
+    matnodes = mat.node_tree.nodes
+    matlinks = mat.node_tree.links
+
+    bpy.context.scene.cycles.feature_set = 'EXPERIMENTAL'
+    mat.cycles.displacement_method = 'BOTH'
+
+    for n in matnodes:
+        matnodes.remove(n)
+
+    NoiseTexture = matnodes.new('ShaderNodeTexNoise')
+    NoiseTexture001 = matnodes.new('ShaderNodeTexNoise')
+    BrightContrast = matnodes.new('ShaderNodeBrightContrast')
+    Math001 = matnodes.new('ShaderNodeMath')
+    ColorRamp = matnodes.new('ShaderNodeValToRGB')
+    Bump = matnodes.new('ShaderNodeBump')
+    Mapping = matnodes.new('ShaderNodeMapping')
+    PrincipledBSDF = matnodes.new('ShaderNodeBsdfPrincipled')
+    Mix = matnodes.new('ShaderNodeMixRGB')
+    Displacement = matnodes.new('ShaderNodeDisplacement')
+    MaterialOutput = matnodes.new('ShaderNodeOutputMaterial')
+    TextureCoordinate = matnodes.new('ShaderNodeTexCoord')
+
+
+    NoiseTexture.location = Vector ((-113.9401, -15.4704))
+    NoiseTexture001.location = Vector ((-207.2210, 250.1717))
+    BrightContrast.location = Vector ((63.7708, -21.8994))
+    Math001.location = Vector ((236.7996, -13.1770))
+    ColorRamp.location = Vector ((73.8341, 607.8826))
+    Bump.location = Vector ((94.9198, 351.3014))
+    Mapping.location = Vector ((-394.1164, 253.8673))
+    PrincipledBSDF.location = Vector ((428.0041, 730.4140))
+    Mix.location = Vector ((424.8583, 109.6794))
+    Displacement.location = Vector ((648.7039, 112.1413))
+    MaterialOutput.location = Vector ((862.9899, 431.3890))
+    TextureCoordinate.location = Vector ((-574.0769, 250.8262))
+
+    #Links
+    matlinks.new(Mapping.outputs['Vector'], NoiseTexture001.inputs['Vector'])
+    matlinks.new(TextureCoordinate.outputs['Generated'], Mapping.inputs['Vector'])
+    matlinks.new(Bump.outputs['Normal'], PrincipledBSDF.inputs['Normal'])
+    matlinks.new(Displacement.outputs['Displacement'], MaterialOutput.inputs['Displacement'])
+    matlinks.new(NoiseTexture001.outputs['Color'], Mix.inputs['Color1'])
+    matlinks.new(Mix.outputs['Color'], Displacement.inputs['Normal'])
+    matlinks.new(NoiseTexture.outputs['Fac'], BrightContrast.inputs['Color'])
+    matlinks.new(ColorRamp.outputs['Color'], PrincipledBSDF.inputs['Base Color'])
+    matlinks.new(NoiseTexture001.outputs['Fac'], Bump.inputs['Height'])
+    matlinks.new(NoiseTexture001.outputs['Color'], ColorRamp.inputs['Fac'])
+    matlinks.new(PrincipledBSDF.outputs['BSDF'], MaterialOutput.inputs['Surface'])
+    matlinks.new(Math001.outputs['Value'], Mix.inputs['Color2'])
+    matlinks.new(BrightContrast.outputs['Color'], Math001.inputs[0])
+
+    #Values
+    #shape
+    Mapping.inputs['Location'].default_value = Vector((sstool.p_rockshape, 0.0000, 0.0000))
+    Mapping.inputs['Rotation'].default_value = [0.0,0.0,0.0]
+    Mapping.inputs['Scale'].default_value = Vector((1.0000, 1.0000, 1.0000))
+
+    #shape scale
+    NoiseTexture001.inputs['Scale'].default_value = sstool.p_rockshapescale/10
+    NoiseTexture001.inputs['Detail'].default_value = 16.0
+    NoiseTexture001.inputs['Distortion'].default_value = 0.0
+
+    #smoothness
+    Displacement.inputs['Height'].default_value = 1.0
+    Displacement.inputs['Midlevel'].default_value = 0.0
+    Displacement.inputs['Scale'].default_value = 20 - (sstool.p_rocksmooth/10.0)
+    Displacement.inputs['Normal'].default_value = [0.0,0.0,0.0]
+
+    #details
+    Mix.inputs['Fac'].default_value = sstool.p_rockfine/100
+
+    #details scale
+    NoiseTexture.inputs['Scale'].default_value = sstool.p_rockfinescale
+    NoiseTexture.inputs['Detail'].default_value = 16.0
+    NoiseTexture.inputs['Distortion'].default_value = 0.0
+    BrightContrast.inputs['Contrast'].default_value = 70
+    
+    #lava
+    Mapping.inputs['Scale'].default_value = Vector((1.0000, 1.0000, sstool.p_rocklava))
+
+    ColorRamp.inputs['Fac'].default_value = 0.5
+    Bump.inputs['Strength'].default_value = 0.55
+    Bump.inputs['Distance'].default_value = 2.0
+    PrincipledBSDF.inputs['Roughness'].default_value = 0.65
+    Math001.inputs[0].default_value = 0.5
+    Math001.inputs[1].default_value = 1
+    Math001.use_clamp = True
+    Math001.operation = 'MULTIPLY'
+
+    ColorRamp.color_ramp.elements[0].color = sstool.p_rockcolor2 #(0.012596523389220238,0.009892581030726433,0.007905444130301476,1.0)
+    ColorRamp.color_ramp.elements[0].position = 0.0
+    ColorRamp.color_ramp.elements[1].color = sstool.p_rockcolor1 #(0.03287532180547714,0.03428680822253227,0.02379169873893261,1.0)
+    ColorRamp.color_ramp.elements[1].position = 0.6
+    
+    rock = bpy.data.objects.get(rockname)
+    bpy.ops.object.material_slot_add()
+    rock.data.materials[0] = mat
+    
+    bpy.context.scene.render.engine = 'CYCLES'
+    bpy.context.space_data.shading.type = 'RENDERED'
+
+    sstool.p_rcount += 1
+
+    return 1
     
 #----------------------------------------------------------------------------------------
 # Operators
@@ -494,19 +627,33 @@ class CRD_OT_CResetPeakDefaults(bpy.types.Operator):
         sstool.p_rand = False
         sstool.p_scale = 1
         
+        sstool.p_rockht = 0.45
+        sstool.p_rocksz = 1.0
+        sstool.p_rockshape = 0
+        sstool.p_rockshapescale = 15
+        sstool.p_rocksmooth = 185
+        sstool.p_rockfine = 12.5
+        sstool.p_rockfinescale = 10
+        sstool.p_rocklava = 0
+        
         sstool.p_grasscolor1 = (0.048438, 0.040584, 0.007456, 1.0)
         sstool.p_grasscolor2 = (0.015930, 0.042520, 0.022400, 1.0)
         sstool.p_snowcolor1 = (0.5,0.5,0.45,1.0)
         sstool.p_snowcolor2 = (0.9,0.9,0.9,1.0)
         sstool.p_rockcolor = (0.008550, 0.006840, 0.006090, 1.0)
+        sstool.p_rockcolor1 = (0.003213, 0.005759, 0.015993, 1)
+        sstool.p_rockcolor2 = (0.147313, 0.075701, 0.040408, 1)
 
         if bpy.context.object is not None:
-            cramp = bpy.context.object.data.materials[0].node_tree.nodes["Snow"]
-            cramp.color_ramp.elements[0].color = (0.008550, 0.006840, 0.006090, 1.0)
-            cramp.color_ramp.elements[1].color = (0.5,0.5,0.45,1.0)
-            cramp.color_ramp.elements[2].color = (0.9,0.9,0.9,1.0)
-            cramp.color_ramp.elements[3].color = (0.015930, 0.042520, 0.022400, 1.0)
-            cramp.color_ramp.elements[4].color = (0.048438, 0.040584, 0.007456, 1.0)
+            try:
+                cramp = bpy.context.object.data.materials[0].node_tree.nodes["Snow"]
+                cramp.color_ramp.elements[0].color = (0.008550, 0.006840, 0.006090, 1.0)
+                cramp.color_ramp.elements[1].color = (0.5,0.5,0.45,1.0)
+                cramp.color_ramp.elements[2].color = (0.9,0.9,0.9,1.0)
+                cramp.color_ramp.elements[3].color = (0.015930, 0.042520, 0.022400, 1.0)
+                cramp.color_ramp.elements[4].color = (0.048438, 0.040584, 0.007456, 1.0)
+            except:
+                pass            
                     
         sstool.p_res = "Reset to defaults, except Divisions"
         return{'FINISHED'}  
@@ -551,6 +698,23 @@ class CBP_OT_CBakePeak(bpy.types.Operator):
             
         else:
             sstool.p_res = "Height Map Created and Saved!"
+    
+        return{'FINISHED'}
+
+class CCR_OT_CCreateRock(bpy.types.Operator):
+    bl_idname = "create.rock"
+    bl_label = "Create Rock"
+    bl_description = "Create a rock."
+
+    def execute(self, context):
+        scene = context.scene
+        sstool = scene.bp_tool
+        
+        res = createrock(sstool)
+        if res==0 :
+            ShowMessageBox("Error: Could not create a rock!")
+        else:
+            sstool.p_res = "Rock created!"
     
         return{'FINISHED'}
         
@@ -641,6 +805,39 @@ class OBJECT_PT_BakePanel(bpy.types.Panel):
         layout.operator("bake.peak", text = "Bake Height Map", icon='OUTLINER_OB_IMAGE')
 
 
+class OBJECT_PT_RockPanel(bpy.types.Panel):
+
+    bl_label = "Rocks"
+    bl_idname = "OBJECT_PT_ROCK_Panel"
+    bl_category = "Blendpeaks"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_context = "objectmode"
+
+    
+    def draw(self, context):
+        layout = self.layout
+        scene = context.scene
+        sstool = scene.bp_tool
+        
+        layout.prop(sstool, "p_rockdiv")
+        layout.prop(sstool, "p_rocksz")
+        layout.prop(sstool, "p_rockht")
+        layout.prop(sstool, "p_rockshape")
+        layout.prop(sstool, "p_rockshapescale")
+        layout.prop(sstool, "p_rocksmooth")
+        layout.prop(sstool, "p_rockfine")
+        layout.prop(sstool, "p_rockfinescale")
+        layout.prop(sstool, "p_rocklava")
+        #layout.prop(sstool, "p_rockcrack")
+        #layout.prop(sstool, "p_rockcrackscale")
+        #layout.prop(sstool, "p_rockcrackmix")
+        row = layout.row(align=True)
+        row.prop(sstool, "p_rockcolor1")
+        row.prop(sstool, "p_rockcolor2")
+        layout.operator("create.rock", text = "Create Rock", icon='MOD_FLUID')
+
+
       
 #---------------------------------------------------------------------------------------------------
 # Properties
@@ -653,13 +850,18 @@ class CCProperties(PropertyGroup):
         description = "Index for naming, internal use only",
         default = 1,
       ) 
+    p_rcount: IntProperty(
+        name = "Rock Count",
+        description = "Index for naming, internal use only",
+        default = 1,
+      ) 
           
     p_divs: IntProperty(
         name = "Divisions",
         description = "Number of Subdivisions, density of mesh",
-        default = 100,
+        default = 200,
         min=1,
-        max=1000        
+        max=2000        
       )   
       
     p_sz: FloatProperty(
@@ -856,8 +1058,126 @@ class CCProperties(PropertyGroup):
          default = (0.008550, 0.006840, 0.006090, 1.0),
          update=on_update_colors
      )   
-     
+
+    p_rockdiv: IntProperty(
+        name = "Divisions",
+        description = "Mesh density.",
+        default = 5,
+        min=1,
+        max=10        
+      ) 
+    p_rocksz: FloatProperty(
+        name = "Size",
+        description = "Radius of the rock.",
+        default = 1,
+        min=0.00001,
+        max=100000        
+      ) 
+    p_rockht: FloatProperty(
+        name = "Height",
+        description = "Z scale of the rock.",
+        default = 0.4,
+        min=0.00001,
+        max=50,
+        update=on_update_rockparam
+      ) 
+
+    p_rockshape: FloatProperty(
+        name = "Shape",
+        description = "Overall shape of the rock.",
+        default = 1,
+        min=0.00001,
+        max=100000,
+        update=on_update_rockparam
+      ) 
+    p_rockshapescale: FloatProperty(
+        name = "Shape Scale",
+        description = "Scale of the overall shape.",
+        default = 15,
+        min=0.00001,
+        max=50,
+        update=on_update_rockparam
+      ) 
+    p_rocksmooth: FloatProperty(
+        name = "Smoothness",
+        description = "Smoothness of the rock.",
+        default = 185,
+        min=0.0,
+        max=200,
+        update=on_update_rockparam
+      ) 
       
+    p_rockfine: FloatProperty(
+        name = "Details",
+        description = "Detailed features of the rock.",
+        default = 0.125,
+        min=0.00001,
+        max=100,
+        update=on_update_rockparam
+      ) 
+    p_rockfinescale: FloatProperty(
+        name = "Details Scale",
+        description = "Scale of the detailed features.",
+        default = 10,
+        min=0.00001,
+        max=100,
+        update=on_update_rockparam
+      ) 
+    p_rocklava: FloatProperty(
+        name = "Lava",
+        description = "Frozen lava rock.",
+        default = 0,
+        min=0.0000,
+        max=100000,
+        update=on_update_rockparam        
+      ) 
+
+    p_rockcrack: FloatProperty(
+        name = "Cracks",
+        description = "Cracks in the rock.",
+        default = 1,
+        min=0.0,
+        max=100000,
+        update=on_update_rockparam
+      ) 
+    p_rockcrackscale: FloatProperty(
+        name = "Cracks Scale",
+        description = "Scale of the cracks.",
+        default = 9,
+        min=0.0,
+        max=100,
+        update=on_update_rockparam
+      ) 
+    p_rockcrackmix: FloatProperty(
+        name = "Crack Intensity",
+        description = "Intensity of the cracks in the rock.",
+        default = 1.0,
+        min=0.0,
+        max=10,
+        update=on_update_rockparam   
+      ) 
+
+    p_rockcolor1: FloatVectorProperty(
+         name = "",
+         subtype = "COLOR",
+         size = 4,
+         min = 0.0,
+         max = 1.0,
+         default = (0.003213, 0.005759, 0.015993, 1), #(0.103585, 0.074843, 0.060272, 1),
+         update=on_update_colors_rock
+     )   
+    p_rockcolor2: FloatVectorProperty(
+         name = "",
+         subtype = "COLOR",
+         size = 4,
+         min = 0.0,
+         max = 1.0,
+         default = (0.147313, 0.075701, 0.040408, 1), #(0.0, 0.0, 0.0, 1.0),
+         update=on_update_colors_rock
+     )   
+
+
+ 
 # ------------------------------------------------------------------------
 #    Registration
 # ------------------------------------------------------------------------
@@ -865,11 +1185,13 @@ class CCProperties(PropertyGroup):
 classes = (
     OBJECT_PT_PeakPanel,
     OBJECT_PT_BakePanel,
-    OBJECT_PT_MiscPeakPanel,    
+    OBJECT_PT_RockPanel,
+    OBJECT_PT_MiscPeakPanel,
     CCProperties,
     CCP_OT_CCreatePeak,
     CRD_OT_CResetPeakDefaults,
-    CBP_OT_CBakePeak
+    CBP_OT_CBakePeak,
+    CCR_OT_CCreateRock
 )
 
 def register():
