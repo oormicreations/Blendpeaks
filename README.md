@@ -5,6 +5,8 @@ A free and open source addon for Blender. It creates mountain peaks.
 
 ![peaks](peaks.jpg)
 
+![rocks](rocks-01.jpg)
+
 ---
 
 **Requirements**
