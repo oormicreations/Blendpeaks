@@ -9,18 +9,19 @@ A free and open source addon for Blender. It creates mountain peaks.
 
 **Requirements**
 
-* Blender 2.80 or above (_This addon was tested in Blender 2.82 and 2.90_)
+* Blender 2.80 to 2.92 (_This addon was tested in Blender 2.82 2.90 2.92_)
 
 **Features**
 
 * Creates procedural mountain peaks in one click.
+* Creates rocks.
 * Easy to change parameters.
 * Uses Cycles displacement.
 * Bakes the height map in one click.
 
 **Intro**
 
-This very simple add-on generates models of mountain peaks with a procedural material. 
+This very simple add-on generates models of mountain peaks with a procedural material. It also creates rocks.
 
 
 **Intro Video**
@@ -84,9 +85,37 @@ The following parameters can be adjusted anytime, before or after creation of th
 
 **Bake Height Map**: Bakes a height map/displacement map for use in Eevee or in game engines etc.
 
+
+**Rocks Panel**
+
+**Divisions**: Number of divisions, or polys.
+
+**Size**: Size of the rock.
+
+**Height**: Height in z-direction (It is scaled)
+
+**Shape**: Variation in shape.
+
+**Shape Scale**: How tiny or big the features are.
+
+**Smoothness**: More or less round shape.
+
+**Details**: Like cracks and chips.
+
+**Detail Scale**: Tiny or big cracks etc.
+
+**Lava**: Frozen lava rock.
+
+**Colors**: Change colors.
+
+**Create Rock**: Create a rock.
+
+
 **Misc Panel**
 
 **Reset Defaults**: button will reset all parameters to default values. Else they remain stored in your blender file.
+
+**Warning**: Reset Default will immediately affect the selected object. All your settings will be gone. Deselect the object if you need to create a new one.
 
 **Help | Source | Updates**: brings you to this page on GitHub.
 
